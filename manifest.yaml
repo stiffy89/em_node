@@ -1,0 +1,34 @@
+applications:
+  # Application
+  - name: em_app
+    instance: 1
+    path: .
+    routes:
+      - route: emapp.cfapps.ap10.hana.ondemand.com
+    memory: 128M
+    timeout: 180
+    buildpacks:
+      - nodejs_buildpack
+    services:
+     - sample1-xsuaa-srv 
+
+  #Approuter
+  - name: approuter-em_app
+    path: app/router
+    routes:
+      - route: approuter-emapp.cfapps.ap10.hana.ondemand.com
+    memory: 128M
+    buildpacks:
+      - nodejs_buildpack
+    services:
+    - sample1-xsuaa-srv 
+
+    env:
+      destinations: >
+        [
+          {
+            "name": "em_app-dest",
+            "url":  "https://emapp.cfapps.ap10.hana.ondemand.com",            
+            "forwardAuthToken": true
+          }
+        ]

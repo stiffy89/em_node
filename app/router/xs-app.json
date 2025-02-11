@@ -1,0 +1,9 @@
+{
+  "routes": [
+    {
+      "source": "^/em_app",
+      "target": "/",
+      "destination": "em_app-dest"
+    }
+  ]
+}

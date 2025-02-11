@@ -4,8 +4,15 @@
   "description": "nodejs application for our event mesh proof of concept",
   "main": "index.js",
   "scripts": {
-    "start" : "node index.js"
+    "start": "node index.js"
   },
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "dependencies": {
+    "@sap/xsenv": "^5.4.0",
+    "@sap/xssec": "^3.2.8",
+    "body-parser": "^1.20.3",
+    "express": "^4.21.2",
+    "passport": "^0.7.0"
+  }
 }

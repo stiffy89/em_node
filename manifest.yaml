@@ -10,7 +10,7 @@ applications:
     buildpacks:
       - nodejs_buildpack
     services:
-     - sample1-xsuaa-srv 
+     - emwebapp-xsuaa-service 
 
   #Approuter
   - name: approuter-em_app
@@ -21,7 +21,7 @@ applications:
     buildpacks:
       - nodejs_buildpack
     services:
-    - sample1-xsuaa-srv 
+    - emwebapp-xsuaa-service 
 
     env:
       destinations: >

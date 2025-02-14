@@ -31,21 +31,31 @@ function onSocketPostError(e){
     console.log(e);
 }
 
-server.on('upgrade', (req, socket,head) => {
+server.on('upgrade', (req, socket, head) => {
+
     socket.on('error', onSocketPreError);
 
     //perform auth - check to see if the req has the correct scope
-    if (req.authInfo.checkScope('$XSAPPNAME.emmessenger')){
-        wss.handleUpgrade(req, socket, head, (ws) => {
-            socket.removeListener('error', onSocketPreError);
-            wss.emit('connection', ws, req);
-        });
+    if (req.headers['sec-websocket-protocol']){
+        let aProtocols = req.headers['sec-websocket-protocol'].split(',');
+        let aFilteredProtocols = aProtocols.filter(x => {
+            return (x.indexOf('emmessenger') >= 0)
+        })
+
+        if (aFilteredProtocols.length > 0){
+            wss.handleUpgrade(req, socket, head, (ws) => {
+                socket.removeListener('error', onSocketPreError);
+                wss.emit('connection', ws, req);
+            });
+
+            return;
+        }
     }
-    else {
-        socket.write('HTTP/1.1 401 unauthorised\r\n\r\n');
-        socket.destroy();
-        return;
-    }
+
+    console.log('unauthorised');
+    socket.write('HTTP/1.1 401 unauthorised\r\n\r\n');
+    socket.destroy();
+    return;
 })
 
 wss.on('connection', (ws, req) => {

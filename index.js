@@ -6,6 +6,7 @@ const port = process.env.port || 8080;
 const JWTStrategy = require('@sap/xssec').JWTStrategy;
 const xsenv = require("@sap/xsenv");
 const passport = require("passport");
+const url = require("url");
 
 app.use(bodyParser.json());
 
@@ -58,7 +59,39 @@ server.on('upgrade', (req, socket, head) => {
     return;
 })
 
+function generateHexCode () {
+    let n = (Math.random() * 0xfffff * 1000000).toString(16);
+    return '#' + n.slice(0, 6);
+}
+
 wss.on('connection', (ws, req) => {
+
+    const hexCode = generateHexCode();
+
+    //https://medium.com/@finnkumar6/understanding-url-in-node-js-a-simple-guide-341cf48af8b7
+    //node module will break down the query into its components for us in an object format
+    const parameters = url.parse(req.url, true);
+    ws._id = parameters.query.customId;
+    ws._hexcode = hexCode;
+
+    //notify all the rest of the connected clients that there are someone new
+    wss.clients.forEach((client) => {
+        if (client.readyState == 1){
+            
+            const message = {
+                'type' : 'usertraffic',
+                'messageBody' : {
+                    'type' : 'userstatus',
+                    'status' : 'join',
+                    'user' : ws._id
+                }
+            }
+
+            client.send(JSON.stringify(message));
+        }
+    });
+
+
     ws.on('error', onSocketPostError);
 
     ws.on('message', (msg, isBinary) => {
@@ -69,7 +102,22 @@ wss.on('connection', (ws, req) => {
     });
 
     ws.on('close', () => {
-        console.log('connection closed');
+        //notify the other websocket clients that are connected that this person has left
+        wss.clients.forEach((client) => {
+            if (client.readyState == 1){
+                
+                const message = {
+                    'type' : 'usertraffic',
+                    'messageBody' : {
+                        'type' : 'userstatus',
+                        'status' : 'leave',
+                        'user' : ws._id
+                    }
+                }
+    
+                client.send(JSON.stringify(message));
+            }
+        });
     })
 });
 
@@ -81,5 +129,61 @@ app.get("/", (req, res, next) => {
         res.status(403).send('Forbidden');
     }
 });
+
+app.post("/NewMessage", (req, res) => {
+
+    let msgBody = req.body;
+
+    msgBody['type'] = 'message';
+
+    let message = {
+        "type" : "message",
+        "messageBody" : msgBody 
+    }
+
+    //whenever we recieve a message from the queue
+    //we will forward this to all our connected clients
+    wss.clients.forEach((client) => {
+        if (client.readyState == 1){
+            message.messageBody["hexcode"] = client._hexcode;
+            client.send(JSON.stringify(message));
+        }
+    });
+
+    res.status(200).end();
+});
+
+let aCurrentlyTyping = [];
+
+app.post("/Typing", (req,res) => {
+    let typingStatus = req.body;
+
+    if (typingStatus.isTyping){
+        if (aCurrentlyTyping.indexOf(typingStatus.personTyping) == -1){
+            aCurrentlyTyping.push(typingStatus.personTyping);
+        }
+    } else {
+        if (aCurrentlyTyping.indexOf(typingStatus.personTyping) >= 0){
+            const iFindIndex = aCurrentlyTyping.findIndex(x => x === typingStatus.personTyping);
+            aCurrentlyTyping.splice(iFindIndex , 1);
+        }
+    }
+
+    //send the whole thing across
+    const message = {
+        "type" : "status",
+        "currentlyTyping" : aCurrentlyTyping
+    }
+
+    wss.clients.forEach((client) => {
+        if (client.readyState == 1){
+            client.send(JSON.stringify(message));
+        }
+    });
+
+    res.status(200).end();
+})
+
+
 
 

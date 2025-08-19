@@ -1,0 +1,57 @@
+###
+
+@clientID = sb-default-06d6a03b-dc93-433b-b4b4-6bf66d55f8ce-clone!b26231|xbem-service-broker-!b81
+@clientSecret = f99debf9-cf2e-4be2-8235-34ad0fb67ec9$EYC1ygmlEoTwy4zGBlAUJRcdaRykcPrea3gzaOqDUHA=
+
+# @name getAuthToken
+GET https://devko104.authentication.ap10.hana.ondemand.com/oauth/token?grant_type=client_credentials&response_type=token
+Authorization: Basic {{clientID}} {{clientSecret}}
+
+###
+@authToken = {{getAuthToken.response.body.access_token}}
+
+POST https://enterprise-messaging-pubsub.cfapps.ap10.hana.ondemand.com/messagingrest/v1/queues/ernox%2Fdevko104%2Femdev%2Fem_messenger/messages
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+x-qos: 0
+
+{
+    "message" : "Check the Internet. Yup. Earthquake. This is the size. This is the epicenter. Check social media.",
+    "user" : "John Citizen",
+    "userid" : "johncitizen@ernox.com",
+    "timestamp" : "14:37:38"
+}
+
+###
+POST https://enterprise-messaging-pubsub.cfapps.ap10.hana.ondemand.com/messagingrest/v1/queues/ernox%2Fdevko104%2Femdev%2Ftypingstatus/messages
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+x-qos: 0
+
+{
+    "isTyping": false,
+    "personTyping": "John Citizen"
+}
+
+###
+POST http://enterprise_messaging.dest/messagingrest/v1/queues/ernox%2Fdevko104%2Femdev%2Fem_messenger/messages
+
+{
+    "message" : "Check the Internet. Yup. Earthquake. This is the size. This is the epicenter. Check social media.",
+    "user" : "John Citizen",
+    "userid" : "johncitizen@ernox.com",
+    "timestamp" : "14:37:38"
+}
+
+
+###
+GET http://ES5.dest/sap/opu/odata/iwbep/GWSAMPLE_BASIC/ProductSet
+
+###
+POST https://devko104.authentication.ap10.hana.ondemand.com/oauth/token
+Content-Type: application/x-www-form-urlencoded
+Accept: application/json
+
+grant_type=refresh_token&token_format=jwt&refresh_token=df8bcea90f38446b8bf61d2cb56b92e2-r
+
+
